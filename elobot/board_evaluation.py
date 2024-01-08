@@ -11,9 +11,9 @@ import move_ordering
 
 def piece_value(piece, current_turn):
     if current_turn:
-        multiplier = int((current_turn - 0.5) * 2)
+        multiplier = 1
     else:
-        multiplier = int(-(current_turn - 0.5) * 2)
+        multiplier = -1
 
     if piece.piece_type == chess.PAWN:
         return 1 * multiplier
@@ -31,11 +31,27 @@ def piece_value(piece, current_turn):
 
 def get_piece_score(board, final_turn):
     piece_score = 0
-    for square in chess.SQUARES:
-        piece = board.piece_at(square)
-        if piece is not None:
-            piece_score += piece_value(piece, final_turn)
+    piece_map = board.piece_map()
+    for piece in piece_map:
+        score += piece_value(piece, final_turn)
+    # for square in chess.SQUARES:
+    #     piece = board.piece_at(square)
+    #     if piece is not None:
+    #         piece_score += piece_value(piece, final_turn)
     return piece_score
+
+
+def control_center_score(board):
+    score = 0
+    for square in CENTER_SQUARES:
+        piece = board.piece_at(square)
+        if piece:
+            if piece.color:
+                score += piece_value(piece, board.turn) ** 0.33
+            else:
+                score -= piece_value(piece, board.turn) ** 0.33
+
+    return score
 
 
 def get_move_score(board, final_turn, current_turn):
