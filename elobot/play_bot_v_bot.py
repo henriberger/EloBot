@@ -52,7 +52,7 @@ def play_chess(white_bot="minimax", black_bot="random"):
             print("White Moves")
 
             if black_bot == "minimax":
-                move = minimax.find_best_move(board, depth=4)
+                move = minimax.find_best_move(board, depth=2)
 
             elif black_bot == "random":
                 move_list = list(board.legal_moves)
