@@ -20,15 +20,14 @@ def piece_value(piece):
         return 5
     elif piece.piece_type == chess.QUEEN:
         return 9
-    # The king's value is not typically counted in basic evaluation
+    # the king's value is not typically counted in basic evaluation
     elif piece.piece_type == chess.KING:
         return 0
 
 
 def get_piece_score(board, final_turn):
     piece_score = 0
-    piece_map = board.piece_map()
-    for piece in piece_map:
+    for piece in board.piece_map().values():
         if piece.color:
             piece_score += piece_value(piece)
         else:
@@ -38,7 +37,7 @@ def get_piece_score(board, final_turn):
     #     piece = board.piece_at(square)
     #     if piece is not None:
     #         piece_score += piece_value(piece, final_turn)
-    return piece_score if final_turn else piece_score * -1
+    return piece_score if final_turn else piece_score * 1
 
 
 def control_center_score(board, final_turn):
@@ -46,9 +45,12 @@ def control_center_score(board, final_turn):
     for square in CENTER_SQUARES:
         piece = board.piece_at(square)
         if piece:
-            score += piece_value(piece) ** 0.33
+            if piece.color:
+                score += piece_value(piece) ** 0.33
+            else:
+                score -= piece_value(piece) ** 0.33
 
-    return score if score else score * -1
+    return score if score else score * 1
 
 
 def get_move_score(board, final_turn, current_turn):
