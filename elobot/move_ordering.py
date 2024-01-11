@@ -75,22 +75,16 @@ def mvv_lva_ordering(capture_moves, board):
 
 
 def evaluate_move(move, board):
-    # Evaluate non-capture moves based on general principles
-
-    # 1. Center Control
-    center_bonus = 0.1 if move.to_square in CENTER_SQUARES else 0.0
-
-    # 2. King Safety
-    castling_bonus = 0.2 if board.is_castling(move) else 0.0
-
-    # 3. Piece Development
+    score = 0
     piece = board.piece_at(move.from_square)
-    development_bonus = 0.1 if piece and piece.piece_type in [chess.PAWN, chess.KNIGHT] else 0.0
+    if move.to_square in CENTER_SQUARES:
+        score += 1
+    elif board.is_castling(move):
+        score += 2
+    elif piece and piece.piece_type in [chess.PAWN, chess.KNIGHT]:
+        score += 1
 
-    # Combine bonuses
-    evaluation = center_bonus + castling_bonus + development_bonus
-
-    return evaluation
+    return score
 
 
 def order_non_capture_moves(non_capture_moves, board):

@@ -16,14 +16,14 @@ def minimax(board, depth, final_player, current_player, alpha, beta, best_board)
         return board_evaluation.evaluate_board(board, final_player, current_player), board.copy()
 
     legal_moves = list(board.legal_moves)
-    random.shuffle(legal_moves)
+    # random.shuffle(legal_moves)
     ordered_moves = move_ordering.get_ordered_moves(board)
 
-    max_score = float("-inf")
-    min_score = float("inf")
+    if len(ordered_moves) > 25:
+        ordered_moves = ordered_moves[:25]
 
     if current_player == final_player:
-        # max_score = float("-inf")
+        max_score = float("-inf")
         for move in ordered_moves:
             board.push(move)
             score, last_board = minimax(board, depth - 1, final_player, not current_player, alpha, beta, best_board)
@@ -37,15 +37,14 @@ def minimax(board, depth, final_player, current_player, alpha, beta, best_board)
                 best_board = last_board
 
             max_score = max(max_score, score)
-
             alpha = max(alpha, score)
 
             if beta <= alpha:
-                break  # Beta cutoff
+                break
         return max_score, best_board
 
     else:  # Minimizing player
-        # min_score = float("inf")
+        min_score = float("inf")
         for move in ordered_moves:
             board.push(move)
             score, last_board = minimax(board, depth - 1, final_player, not current_player, alpha, beta, best_board)
@@ -58,7 +57,7 @@ def minimax(board, depth, final_player, current_player, alpha, beta, best_board)
             beta = min(beta, score)
 
             if beta <= alpha:
-                break  # Alpha cutoff
+                break
         return min_score, best_board
 
 

@@ -1,3 +1,4 @@
+import math
 import random
 from datetime import datetime
 
@@ -7,6 +8,8 @@ import chess.engine
 import chess.svg
 import minimax
 import move_ordering
+
+from setup.constants import CENTER_SQUARES
 
 
 def piece_value(piece):
@@ -25,7 +28,7 @@ def piece_value(piece):
         return 0
 
 
-def get_piece_score(board, final_turn):
+def get_piece_score(board):
     piece_score = 0
     for piece in board.piece_map().values():
         if piece.color:
@@ -33,61 +36,57 @@ def get_piece_score(board, final_turn):
         else:
             piece_score -= piece_value(piece)
 
-    # for square in chess.SQUARES:
-    #     piece = board.piece_at(square)
-    #     if piece is not None:
-    #         piece_score += piece_value(piece, final_turn)
-    return piece_score if final_turn else piece_score * 1
+    return piece_score
 
 
-def control_center_score(board, final_turn):
-    score = 0
+def get_center_score(board):
+    center_score = 0
     for square in CENTER_SQUARES:
         piece = board.piece_at(square)
         if piece:
             if piece.color:
-                score += piece_value(piece) ** 0.33
+                center_score += math.log(piece_value(piece) + 1e-6)
             else:
-                score -= piece_value(piece) ** 0.33
+                center_score -= math.log(piece_value(piece) + 1e-6)
 
-    return score if score else score * 1
+    return center_score
 
 
-def get_move_score(board, final_turn, current_turn):
+def get_move_score(board):
     move_score = 0
-    if final_turn == current_turn:
-        move_score += len(list(board.legal_moves))
-        move = board.pop()
-        move_score -= len(list(board.legal_moves))
-        board.push(move)
+    move_score -= len(list(board.legal_moves))
+    move = board.pop()
+    move_score += len(list(board.legal_moves))
+    board.push(move)
 
+    if move_score == 0:
+        return 0
+    elif not board.turn:
+        return math.log(abs(move_score))
     else:
-        move_score -= len(list(board.legal_moves))
-        move = board.pop()
-        move_score += len(list(board.legal_moves))
-        board.push(move)
-
-    return move_score
+        return -math.log(abs(move_score))
 
 
-def get_checkmate_score(board, final_turn, current_turn):
-    if not board.turn == final_turn and board.is_checkmate():
+def get_checkmate_score(board):
+    if not board.turn and board.is_checkmate():
         return float("inf")
-    elif board.turn == final_turn and board.is_checkmate():
+    elif board.turn and board.is_checkmate():
         return float("-inf")
     else:
         return 0
 
 
-def evaluate_board(board, final_turn, current_turn, debug=False):
+def evaluate_board(board, debug=False):
     # print(current_turn)
     # Simple evaluation function (count material)
 
-    piece_score = get_piece_score(board, final_turn) * 3
-    move_score = get_move_score(board, final_turn, current_turn)
-    checkmate_score = get_checkmate_score(board, final_turn, current_turn)
+    piece_score = get_piece_score(board)
+    center_score = get_center_score(board)
+    move_score = get_move_score(board)
 
-    evaluation = piece_score + move_score + checkmate_score
+    checkmate_score = get_checkmate_score(board)
+
+    evaluation = piece_score + center_score + move_score / len(board.move_stack) + checkmate_score
 
     if debug == True:
         print("EVALUATION")
