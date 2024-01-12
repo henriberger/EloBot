@@ -22,11 +22,10 @@ def play_chess(white_bot="minimax", black_bot="random"):
 
     run_opening(board)
 
-    print(board)
-    print(len(board.move_stack))
-    print()
-    # board_evaluation.evaluate_board(board, not board.turn, board.turn, debug=True)
+    # print(board)
     # print()
+    board_evaluation.evaluate_board(board, not board.turn, board.turn, debug=True)
+    print()
 
     last_time = datetime.now()
 
@@ -73,10 +72,8 @@ def play_chess(white_bot="minimax", black_bot="random"):
 
         # print(board)
         # print()
-        # board_evaluation.evaluate_board(board, not board.turn, board.turn, debug=True)
-        print(len(board.move_stack), len(best_board.move_stack))
+        board_evaluation.evaluate_board(board, not board.turn, board.turn, debug=True)
         print()
-        break
 
     print("Game Over")
     print("Result:", board.result())
