@@ -148,7 +148,7 @@ class EloBot:
             for move in ordered_moves:
                 board.push(move)
 
-                score, last_board = self.minimax(board, self.depth - 1, float("-inf"), float("inf"), best_board)
+                score, last_board = self.minimax(board.copy(), self.depth - 1, float("-inf"), float("inf"), best_board)
 
                 board.pop()
 
@@ -171,7 +171,6 @@ class EloBot:
                 results = dict(sorted(results.items(), reverse=False))
 
             keys = list(results.keys())
-            return [results[keys[i]].move_stack[self.plies] for i in range(top_n)]
 
         self.best_move = best_move
         self.best_board = best_board
@@ -182,16 +181,48 @@ class EloBot:
         except:
             pass
 
-        # print(best_move, self.opponent_best_follow_up_move)
+        if meta:
+            return {k: results[k] for k in keys[:top_n]}, self.plies
 
         return board
 
-    def meta_search(self):
-        pass
+    def meta_search(self, board, top_n=1):
+        results, plies = self.make_best_move(board.copy(), meta=True, top_n=top_n)
+        # print(plies)
+        meta_results = {}
+        for best_board in results.values():
+            self.best_move = None
+            self.best_board = None
+            best_move = list(best_board.move_stack)[plies]
+            board.push(best_move)
+            new_results, _ = self.make_best_move(board.copy(), meta=True, top_n=top_n)
+            board.pop()
+
+            meta_results = meta_results | new_results
+
+        if self.color:
+            best_score = max(meta_results.keys())
+            best_board = meta_results[best_score]
+            best_move = best_board.move_stack[plies]
+        else:
+            best_score = min(meta_results.keys())
+            best_board = meta_results[best_score]
+            best_move = best_board.move_stack[plies]
+
+        try:
+            self.opponent_best_follow_up_move = list(self.best_board.move_stack)[plies + 1]
+        except:
+            pass
+
+        self.best_move = best_move
+        self.best_board = best_board
+        board.push(self.best_move)
+
+        return board
 
 
 if __name__ in "__main__":
-    white_bot = EloBot(color=True, depth=6, multiprocess=True)
+    white_bot = EloBot(color=True, depth=5, multiprocess=True)
     black_bot = EloBot(color=False, depth=4)
 
     board = chess.Board()
@@ -199,7 +230,8 @@ if __name__ in "__main__":
     moves = 0
     while not board.is_game_over():
         start = time.time()
-        board = white_bot.make_best_move(board)
+        # board = white_bot.make_best_move(board)
+        board = white_bot.meta_search(board)
         if not board.is_game_over():
             # board = black_bot.find_best_move(board)
             board.push(white_bot.cheat_runtime())
