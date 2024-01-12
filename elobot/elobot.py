@@ -106,7 +106,7 @@ class EloBot:
         else:
             results[score] = last_board
 
-    def make_best_move(self, board):
+    def make_best_move(self, board, meta=False, top_n=3):
         self.plies = len(board.move_stack)
         self.moves = int(self.plies / 2) + (1 if not board.turn else 0)
         best_move = None
@@ -163,6 +163,16 @@ class EloBot:
                         best_move = move
                         best_board = last_board
 
+        if meta:
+            if self.color:
+                results = dict(sorted(results.items(), reverse=True))
+                keys = list(results.keys())
+            else:
+                results = dict(sorted(results.items(), reverse=False))
+
+            keys = list(results.keys())
+            return [results[keys[i]].move_stack[self.plies] for i in range(top_n)]
+
         self.best_move = best_move
         self.best_board = best_board
         board.push(self.best_move)
@@ -176,9 +186,12 @@ class EloBot:
 
         return board
 
+    def meta_search(self):
+        pass
+
 
 if __name__ in "__main__":
-    white_bot = EloBot(color=True, depth=5, multiprocess=True)
+    white_bot = EloBot(color=True, depth=6, multiprocess=True)
     black_bot = EloBot(color=False, depth=4)
 
     board = chess.Board()
