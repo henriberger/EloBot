@@ -34,7 +34,7 @@ def play_chess(white_bot="minimax", black_bot="random"):
         if board.turn == chess.WHITE:
             print("White Moves")
             if white_bot == "minimax":
-                move = minimax.find_best_move(board, depth=5)
+                move, best_board = minimax.find_best_move(board, depth=5)
 
             elif white_bot == "random":
                 move_list = list(board.legal_moves)
@@ -51,7 +51,7 @@ def play_chess(white_bot="minimax", black_bot="random"):
             # move = find_best_move(board, depth=4)
 
             if black_bot == "minimax":
-                move = minimax.find_best_move(board, depth=3)
+                move, best_board = minimax.find_best_move(board, depth=3)
 
             elif black_bot == "random":
                 move_list = list(board.legal_moves)
