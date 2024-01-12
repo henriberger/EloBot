@@ -1,3 +1,6 @@
+import multiprocessing as mp
+import time
+
 import board_evaluation
 import chess
 import minimax
@@ -61,9 +64,25 @@ class EloBot:
 
             return min_score, best_board
 
-    def find_best_move(self, board):
+    def find_best_move(self, board, best_board, results, i):
+        score, last_board = self.minimax(board, self.depth - 1, float("-inf"), float("inf"), best_board)
+        if results.get(score):
+            while results.get(score):
+                if self.color:
+                    score -= 1e-6
+                else:
+                    score += 1e-6
+            results[score] = last_board
+
+        else:
+            results[score] = last_board
+
+    def make_best_move(self, board):
+        manager = mp.Manager()
+        results = manager.dict()
+
         self.plies = len(board.move_stack)
-        self.moves = int(self.plies / 2)
+        self.moves = int(self.plies / 2) + (1 if not board.turn else 0)
         # self.best_move, self.best_board = minimax.find_best_move(board, self.depth)
         best_move = None
         best_odd_depth_score = float("-inf")
@@ -89,55 +108,86 @@ class EloBot:
         # if len(ordered_moves) > 30:
         #     ordered_moves = ordered_moves[:30]
 
-        last_board = board.copy()
+        best_board = board.copy()
 
+        jobs = []
         for move in ordered_moves:
             board.push(move)
 
-            score, last_board = self.minimax(board, self.depth - 1, float("-inf"), float("inf"), last_board)
+            #     score, last_board = self.minimax(board, self.depth - 1, float("-inf"), float("inf"), best_board)
 
+            #     # print(score)
+            #     jobs.append(score)
+
+            #     board.pop()
+
+            #     if self.color:
+            #         if score > best_odd_depth_score:
+            #             best_odd_depth_score = score
+            #             best_move = move
+            #             best_board = last_board
+            #     else:
+            #         if score < best_even_depth_score:
+            #             best_even_depth_score = score
+            #             best_move = move
+            #             best_board = last_board
+
+            # print(len(jobs))
+
+            p = mp.Process(target=self.find_best_move, args=(board.copy(), best_board, results, len(jobs)))
             board.pop()
-            if self.color:
-                if score > best_odd_depth_score:
-                    best_odd_depth_score = score
-                    best_move = move
-                    best_board = last_board
-            else:
-                if score < best_even_depth_score:
-                    best_even_depth_score = score
-                    best_move = move
-                    best_board = last_board
+            p.start()
+            jobs.append(p)
+
+        for p in jobs:
+            p.join()
+
+        # print(results)
+
+        if self.color:
+            best_score = max(results.keys())
+            best_board = results[best_score]
+            best_move = best_board.move_stack[self.plies]
+        else:
+            best_score = min(results.keys())
+            best_board = results[best_score]
+            best_move = best_board.move_stack[self.plies]
 
         self.best_move = best_move
         self.best_board = best_board
         board.push(self.best_move)
-        print(best_board)
+        # print(best_board)
 
         try:
             self.opponent_best_follow_up_move = list(self.best_board.move_stack)[self.plies + 1]
         except:
             pass
 
+        print(best_move, self.opponent_best_follow_up_move)
+
         return board
 
 
-white_bot = EloBot(color=True, depth=4)
-black_bot = EloBot(color=False, depth=4)
+if __name__ in "__main__":
+    white_bot = EloBot(color=True, depth=5)
+    black_bot = EloBot(color=False, depth=4)
 
-board = chess.Board()
-print(board)
-moves = 0
-while not board.is_game_over():
-    board = white_bot.find_best_move(board)
-    if not board.is_game_over():
-        # board = black_bot.find_best_move(board)
-        board.push(white_bot.cheat_runtime())
-    moves += 1
-    print(f"Move {moves}")
+    board = chess.Board()
     print(board)
-#     break
-# print(white_bot.best_board)
-# print(white_bot.best_board.move_stack)
+    moves = 0
+    while not board.is_game_over():
+        start = time.time()
+        board = white_bot.make_best_move(board)
+        if not board.is_game_over():
+            # board = black_bot.find_best_move(board)
+            board.push(white_bot.cheat_runtime())
+        end = time.time()
+        moves += 1
+        print(f"Move {moves}: {round((end - start) / 1, 1)} sec")
+        print(board)
+    #     break
+    # print(white_bot.best_board)
+    # print(white_bot.best_board.move_stack)
 
-print("Game Over")
-print("Result:", board.result())
+    print("Game Over")
+    print("Result:", board.result())
